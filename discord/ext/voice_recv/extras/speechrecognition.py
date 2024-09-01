@@ -81,12 +81,16 @@ else:
             default_recognizer: SRRecognizerMethod = 'google',
             phrase_time_limit: int = 10,
             ignore_silence_packets: bool = True,
+            language=None,
+            model=None,
         ):
             super().__init__(None)
             self.process_cb: Optional[SRProcessDataCB] = process_cb
             self.text_cb: Optional[SRTextCB] = text_cb
             self.phrase_time_limmit: int = phrase_time_limit
             self.ignore_silence_packets: bool = ignore_silence_packets
+            self.language = language
+            self.model = model
 
             self.default_recognizer: SRRecognizerMethod = default_recognizer
             self._stream_data: defaultdict[int, _StreamData] = defaultdict(
@@ -133,7 +137,12 @@ else:
                 try:
                     # they changed recognize_google to be optionally assigned at runtime...
                     func = getattr(recognizer, 'recognize_' + self.default_recognizer, recognizer.recognize_google) # type: ignore
-                    text = func(audio)  # type: ignore
+                    kwargs = {}
+                    if self.model is not None:
+                        kwargs['model'] = self.model
+                    if self.language is not None:
+                        kwargs['language'] = self.language
+                    text = func(audio, **kwargs)  # type: ignore
                 except sr.UnknownValueError:
                     log.debug("Bad speech chunk")
                     # self._debug_audio_chunk(audio)
